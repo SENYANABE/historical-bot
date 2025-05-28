@@ -12,16 +12,12 @@ dp = Dispatcher(bot)
 
 user_data = {}
 
+
 @dp.message_handler(commands=["start"])
 async def start_handler(message: types.Message):
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(KeyboardButton("🚀 Начать"))
-    await message.answer("Привет! Я — Плёнка Судьбы, машина времени. Готов выяснить, кем ты был(а) бы в XX веке?", reply_markup=keyboard)
-
-@dp.message_handler(lambda message: message.text == "🚀 Начать")
-async def begin_quiz(message: types.Message):
     user_data[message.from_user.id] = {"step": 0, "answers": []}
     await send_question(message.chat.id, 0)
+
 
 
 questions = [
