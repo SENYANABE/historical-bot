@@ -1,4 +1,3 @@
-
 import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -170,4 +169,10 @@ async def send_result(chat_id, user_id):
 if __name__ == "__main__":
     from aiogram import executor
     executor.start_polling(dp)
+
+
+@dp.message_handler(commands=['start'])
+async def start_handler(message: types.Message):
     await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
+    # Здесь можно вызвать следующую функцию, если нужно запустить тест
+    # await ask_question(message, 0)
