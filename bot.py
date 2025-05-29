@@ -171,7 +171,6 @@ if __name__ == "__main__":
     from aiogram import executor
     executor.start_polling(dp)
 
-
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
