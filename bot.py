@@ -134,8 +134,7 @@ def get_keyboard(options):
 async def cmd_start(message: types.Message):
     # Инициализируем
     user_state[message.chat.id] = {'q': 0, 'answers': []}
-    await message.answer("Привет! Это «Плёнка судьбы»
-Тест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
+    await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
     await asyncio.sleep(1.5)
     q0 = questions[0]
     await message.answer(f"Вопрос 1 из {len(questions)}:
