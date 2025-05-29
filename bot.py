@@ -4,12 +4,12 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 
-API_TOKEN = os.getenv("BOT_TOKEN") or "YOUR_TOKEN_HERE"  # Вставьте ваш токен
+API_TOKEN = os.getenv("BOT_TOKEN") or "ВАШ_ТОКЕН_ЗДЕСЬ"
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-# Полный список из 14 вопросов
+# --- Массив из 14 вопросов ---
 questions = [
     {
         "text": "Ты скорее...",
@@ -121,57 +121,49 @@ questions = [
     }
 ]
 
-# Хранение состояния: q_index и answers
+# Состояние пользователя: какой вопрос и список ответов
 user_state = {}
 
-def get_keyboard(options):
+def make_keyboard(opts):
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    for opt in options:
-        kb.add(KeyboardButton(f"{opt['emoji']} {opt['text']}"))
+    for o in opts:
+        kb.add(KeyboardButton(f"{o['emoji']} {o['text']}"))
     return kb
 
 @dp.message_handler(commands=['start'])
-async def cmd_start(message: types.Message):
-    # Инициализируем
-    user_state[message.chat.id] = {'q': 0, 'answers': []}
-    await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
+async def start_quiz(msg: types.Message):
+    user_state[msg.chat.id] = {'idx': 0, 'answers': []}
+    await msg.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
     await asyncio.sleep(1.5)
-    q0 = questions[0]
-    await message.answer(f"Вопрос 1 из {len(questions)}:
-{q0['text']}", reply_markup=get_keyboard(q0['options']))
+    q = questions[0]
+    await msg.answer(f"Вопрос 1 из {len(questions)}:\n{q['text']}", reply_markup=make_keyboard(q['options']))
 
-@dp.message_handler(lambda message: message.chat.id in user_state)
-async def process_answer(message: types.Message):
-    state = user_state[message.chat.id]
-    idx = state['q']
-    # Найдём выбранный opt.value
-    selected = None
-    for opt in questions[idx]['options']:
-        if message.text.startswith(opt['emoji']):
-            selected = opt['value']
+@dp.message_handler(lambda m: m.chat.id in user_state)
+async def process_answer(m: types.Message):
+    state = user_state[m.chat.id]
+    idx = state['idx']
+    # определяем выбор
+    choice = None
+    for o in questions[idx]['options']:
+        if m.text.startswith(o['emoji']):
+            choice = o['value']
             break
-    if selected:
-        state['answers'].append(selected)
+    if choice:
+        state['answers'].append(choice)
     idx += 1
     if idx < len(questions):
-        state['q'] = idx
+        state['idx'] = idx
         q = questions[idx]
-        await message.answer(f"Вопрос {idx+1} из {len(questions)}:
-{q['text']}", reply_markup=get_keyboard(q['options']))
+        await m.answer(f"Вопрос {idx+1} из {len(questions)}:\n{q['text']}", reply_markup=make_keyboard(q['options']))
     else:
-        # Подсчёт результатов
+        # подсчёт и вывод результата
         counts = {}
         for v in state['answers']:
             counts[v] = counts.get(v, 0) + 1
-        result_key = max(counts, key=counts.get)
-        titles = {
-            "технарь": "Технарь",
-            "руководитель": "Руководитель",
-            "творец": "Творец",
-            "рабочий": "Рабочий"
-        }
-        await message.answer(f"📝 Ваш результат: {titles.get(result_key, result_key)}", reply_markup=types.ReplyKeyboardRemove())
-        user_state.pop(message.chat.id)
+        res = max(counts, key=counts.get)
+        names = {"технарь":"Технарь","руководитель":"Руководитель","творец":"Творец","рабочий":"Рабочий"}
+        await m.answer(f"📝 Ваш результат: {names.get(res, res)}", reply_markup=types.ReplyKeyboardRemove())
+        del user_state[m.chat.id]
 
 if __name__ == "__main__":
     executor.start_polling(dp)
