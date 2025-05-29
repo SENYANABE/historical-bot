@@ -4,12 +4,12 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 
-API_TOKEN = os.getenv("BOT_TOKEN")  # Вставь свой токен сюда или через .env
+API_TOKEN = os.getenv("BOT_TOKEN") or "YOUR_TOKEN_HERE"  # Вставьте ваш токен
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-# Вопросы (14 штук)
+# Полный список из 14 вопросов
 questions = [
     {
         "text": "Ты скорее...",
@@ -121,56 +121,58 @@ questions = [
     }
 ]
 
-# Для хранения прогресса и ответов
-user_progress = {}
-user_answers = {}
+# Хранение состояния: q_index и answers
+user_state = {}
 
 def get_keyboard(options):
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
+    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     for opt in options:
         kb.add(KeyboardButton(f"{opt['emoji']} {opt['text']}"))
     return kb
 
-async def ask_question(message, q_num):
-    if q_num >= len(questions):
-        answers = user_answers.get(message.from_user.id, [])
+@dp.message_handler(commands=['start'])
+async def cmd_start(message: types.Message):
+    # Инициализируем
+    user_state[message.chat.id] = {'q': 0, 'answers': []}
+    await message.answer("Привет! Это «Плёнка судьбы»
+Тест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
+    await asyncio.sleep(1.5)
+    q0 = questions[0]
+    await message.answer(f"Вопрос 1 из {len(questions)}:
+{q0['text']}", reply_markup=get_keyboard(q0['options']))
+
+@dp.message_handler(lambda message: message.chat.id in user_state)
+async def process_answer(message: types.Message):
+    state = user_state[message.chat.id]
+    idx = state['q']
+    # Найдём выбранный opt.value
+    selected = None
+    for opt in questions[idx]['options']:
+        if message.text.startswith(opt['emoji']):
+            selected = opt['value']
+            break
+    if selected:
+        state['answers'].append(selected)
+    idx += 1
+    if idx < len(questions):
+        state['q'] = idx
+        q = questions[idx]
+        await message.answer(f"Вопрос {idx+1} из {len(questions)}:
+{q['text']}", reply_markup=get_keyboard(q['options']))
+    else:
+        # Подсчёт результатов
         counts = {}
-        for ans in answers:
-            counts[ans] = counts.get(ans, 0) + 1
-        result = max(counts, key=counts.get) if counts else None
+        for v in state['answers']:
+            counts[v] = counts.get(v, 0) + 1
+        result_key = max(counts, key=counts.get)
         titles = {
             "технарь": "Технарь",
             "руководитель": "Руководитель",
             "творец": "Творец",
             "рабочий": "Рабочий"
         }
-        if result:
-            await message.answer(f"📝 Ваш результат: {titles[result]}", reply_markup=types.ReplyKeyboardRemove())
-        else:
-            await message.answer("Что-то пошло не так...", reply_markup=types.ReplyKeyboardRemove())
-        return
-
-    q = questions[q_num]
-    text = f"Вопрос {q_num+1} из {len(questions)}:\n{q['text']}"
-    kb = get_keyboard(q["options"])
-    await message.answer(text, reply_markup=kb)
-    user_progress[message.from_user.id] = q_num
-
-@dp.message_handler(commands=['start'])
-async def start_handler(message: types.Message):
-    user_progress[message.from_user.id] = 0
-    user_answers[message.from_user.id] = []
-    await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
-    await asyncio.sleep(1.5)
-    await ask_question(message, 0)
-
-@dp.message_handler(lambda message: message.text and message.from_user.id in user_progress)
-async def handle_answer(message: types.Message):
-    q_num = user_progress[message.from_user.id]
-    text = message.text.split(" ", 1)[1]  # убираем emoji и пробел
-    user_answers[message.from_user.id].append(text)
-    await ask_question(message, q_num + 1)
+        await message.answer(f"📝 Ваш результат: {titles.get(result_key, result_key)}", reply_markup=types.ReplyKeyboardRemove())
+        user_state.pop(message.chat.id)
 
 if __name__ == "__main__":
-    from aiogram import executor
     executor.start_polling(dp)
