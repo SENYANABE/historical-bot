@@ -170,3 +170,4 @@ async def send_result(chat_id, user_id):
 if __name__ == "__main__":
     from aiogram import executor
     executor.start_polling(dp)
+    await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
