@@ -121,8 +121,9 @@ questions = [
     }
 ]
 
-# Для хранения ответов пользователя
+# Для хранения прогресса и ответов
 user_progress = {}
+user_answers = {}
 
 def get_keyboard(options):
     kb = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -130,10 +131,23 @@ def get_keyboard(options):
         kb.add(KeyboardButton(f"{opt['emoji']} {opt['text']}"))
     return kb
 
-# Функция отправки вопроса
 async def ask_question(message, q_num):
     if q_num >= len(questions):
-        await message.answer("Тест завершён! Скоро появится твой результат 🏆", reply_markup=types.ReplyKeyboardRemove())
+        answers = user_answers.get(message.from_user.id, [])
+        counts = {}
+        for ans in answers:
+            counts[ans] = counts.get(ans, 0) + 1
+        result = max(counts, key=counts.get) if counts else None
+        titles = {
+            "технарь": "Технарь",
+            "руководитель": "Руководитель",
+            "творец": "Творец",
+            "рабочий": "Рабочий"
+        }
+        if result:
+            await message.answer(f"📝 Ваш результат: {titles[result]}", reply_markup=types.ReplyKeyboardRemove())
+        else:
+            await message.answer("Что-то пошло не так...", reply_markup=types.ReplyKeyboardRemove())
         return
 
     q = questions[q_num]
@@ -144,6 +158,8 @@ async def ask_question(message, q_num):
 
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
+    user_progress[message.from_user.id] = 0
+    user_answers[message.from_user.id] = []
     await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
     await asyncio.sleep(1.5)
     await ask_question(message, 0)
@@ -151,7 +167,10 @@ async def start_handler(message: types.Message):
 @dp.message_handler(lambda message: message.text and message.from_user.id in user_progress)
 async def handle_answer(message: types.Message):
     q_num = user_progress[message.from_user.id]
+    text = message.text.split(" ", 1)[1]  # убираем emoji и пробел
+    user_answers[message.from_user.id].append(text)
     await ask_question(message, q_num + 1)
 
 if __name__ == "__main__":
+    from aiogram import executor
     executor.start_polling(dp)
