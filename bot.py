@@ -175,4 +175,5 @@ if __name__ == "__main__":
 async def start_handler(message: types.Message):
     await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
     # Здесь можно вызвать следующую функцию, если нужно запустить тест
-    # await ask_question(message, 0)
+    #     await message.answer("Привет! Это «Плёнка судьбы»\nТест из 14 вопросов покажет, кем бы ты был(а) в XX веке.")
+await ask_question(message, 0)
