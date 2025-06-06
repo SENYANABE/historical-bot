@@ -276,15 +276,16 @@ async def process_answer(m: types.Message):
 if __name__ == "__main__":
     executor.start_polling(dp)
 
-# ---
-# Замени финальный вывод результата этим блоком:
 
-# Сначала отправляем картинку (фото)
-await message.answer_photo(
-    "https://i.pinimg.com/736x/23/42/e3/2342e3dfec847e418e110c7d4d4921c0.jpg"
-)
-# Затем отправляем текст результата
-await message.answer(
-    get_result_text(profession_key),  # <-- подставь сюда свою переменную, если она называется не profession_key
-    parse_mode="HTML"
-)
+async def show_result(message, profession_key):
+    await message.answer_photo(
+        "https://i.pinimg.com/736x/23/42/e3/2342e3dfec847e418e110c7d4d4921c0.jpg"
+    )
+    await message.answer(
+        get_result_text(profession_key),
+        parse_mode="HTML"
+    )
+
+# Когда нужно отправить результат, просто вызови:
+# await show_result(message, profession_key)
+# (подставь своё название переменной, если оно другое)
