@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
 async def show_result(message, profession_key):
     await message.answer_photo(
-        "https://i.pinimg.com/736x/23/42/e3/2342e3dfec847e418e110c7d4d4921c0.jpg"
+        "https://imgur.com/a/nhDMHVK"
     )
     await message.answer(
         get_result_text(profession_key),
